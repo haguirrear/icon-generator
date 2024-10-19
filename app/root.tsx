@@ -6,8 +6,11 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import type { LinksFunction } from "@remix-run/node";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import "./tailwind.css";
+import tailwindHref from "./tailwind.css?url";
+import NavBar from "./components/NavBar";
+import { useState } from "react";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -20,6 +23,10 @@ export const links: LinksFunction = () => [
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
+  {
+    rel: "stylesheet",
+    href: tailwindHref,
+  }
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -31,7 +38,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body >
+        <NavBar />
         {children}
         <ScrollRestoration />
         <Scripts />
@@ -41,5 +49,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  // Create a QueryClient instance
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60 * 1000
+      }
+    }
+  }));
+
+  return <QueryClientProvider client={queryClient}>
+    <Outlet />
+  </QueryClientProvider>
 }

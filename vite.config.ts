@@ -10,6 +10,11 @@ export default defineConfig({
         v3_relativeSplatPath: true,
         v3_throwAbortReason: true,
       },
+      routes(definedRoutes) {
+        return definedRoutes((route) => {
+          route("/api/generate-icon", "routes/api/generate-icon.ts")
+        })
+      }
     }),
     tsconfigPaths(),
   ],
