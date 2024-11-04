@@ -13,6 +13,7 @@ type GoogleClaims = {
   email: string
 }
 
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!params.provider || !isValidProviderName(params.provider)) {
     return new Response("not found", { status: 404 })
@@ -30,16 +31,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const cookiesHeader = request.headers.get("cookie")
   const oauthCookieValues = await oauthCookie.parse(cookiesHeader) as OauthCookieValue || null
 
+  const deletedOauthCookie = await oauthCookie.serialize("", { maxAge: undefined, expires: new Date(0) })
+
   if (code === null || state === null || oauthCookieValues.state === null || oauthCookieValues.codeVerifier === null) {
     console.log("either code, state, storedstate or codeverifier are null")
     return new Response(null, {
-      status: 400
+      status: 400,
+      headers: {
+        "Set-Cookie": deletedOauthCookie
+      }
     });
   }
   if (state !== oauthCookieValues.state) {
     console.log("state is different than storedState")
     return new Response(null, {
-      status: 400
+      status: 400,
+      headers: {
+        "Set-Cookie": deletedOauthCookie
+      }
     });
   }
 
@@ -50,20 +59,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     console.log("Invalid code or code client credentials")
 
     return new Response(null, {
-      status: 400
+      status: 400,
+      headers: {
+        "Set-Cookie": deletedOauthCookie
+      }
     });
   }
 
   const claims = decodeIdToken(tokens.idToken()) as GoogleClaims;
 
   const { user: existingUser } = await getUserOauth(params.provider, claims.sub);
+  const next = oauthCookieValues.next || "/"
 
   if (existingUser !== null) {
     console.log("User exists, redirecting...")
-    return redirect("/", {
-      headers: {
-        "Set-Cookie": await setSessionCookieHeader(existingUser.id)
-      }
+    return redirect(next, {
+      headers: [
+        ["Set-Cookie", await setSessionCookieHeader(existingUser.id)],
+        ["Set-Cookie", deletedOauthCookie]
+      ]
     })
   }
 
@@ -77,9 +91,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     provider: params.provider
   })
 
-  return redirect("/", {
-    headers: {
-      "Set-Cookie": await setSessionCookieHeader(userId)
-    }
+  return redirect(next, {
+    headers: [
+      ["Set-Cookie", await setSessionCookieHeader(userId)],
+      ["Set-Cookie", deletedOauthCookie]
+    ]
   })
 }

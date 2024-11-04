@@ -1,8 +1,19 @@
+import { useSearchParams } from "@remix-run/react"
 import "./google.css"
 
 
 export function GoogleSignInButton() {
-  return <a href="/login/google">
+  const [searchParams] = useSearchParams()
+  const next = searchParams.get("next")
+  let url = "/login/google"
+
+  if (next) {
+    const newSearchParams = new URLSearchParams()
+    newSearchParams.set("next", next)
+    url = url + "?" + searchParams.toString()
+  }
+
+  return <a href={url}>
     <button className="gsi-material-button">
       <div className="gsi-material-button-state"></div>
       <div className="gsi-material-button-content-wrapper">

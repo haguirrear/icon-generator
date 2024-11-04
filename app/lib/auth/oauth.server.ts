@@ -6,6 +6,7 @@ import { ensureEnv } from "~/lib/env.server"
 export type OauthCookieValue = {
   state: string
   codeVerifier: string
+  next: string | null
 }
 
 export const oauthCookie = createCookie("oauth_val", {

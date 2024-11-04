@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, json } from "@remix-run/node";
+import { json, TypedResponse } from "@remix-run/node";
 
 import Together from "together-ai";
 
@@ -9,8 +9,16 @@ function buildPrompt(input: { prompt: string, color: string, style: string }): s
   return `a modern icon in ${input.color} of ${input.prompt}, ${input.style}, minimialistic, high quality, trending on art station, unreal engine graphics quality`;
 }
 
+type GenerateIconResponse = {
+  state: "error"
+  error: string
+} | {
+  state: "success"
+  image: string
+}
 
-export async function action({ request }: ActionFunctionArgs) {
+
+export async function generateIconAction(request: Request): Promise<TypedResponse<GenerateIconResponse>> {
   const formData = await request.formData()
 
   const prompt = formData.get("prompt")?.toString()
@@ -18,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const style = formData.get("style")?.toString()
 
   if (!prompt || !color || !style) {
-    return json({ errpr: "missing arguments" }, 400)
+    return json({ state: "error", error: "missing arguments" }, 400)
   }
 
   const response = await together.images.create({
@@ -32,5 +40,5 @@ export async function action({ request }: ActionFunctionArgs) {
     response_format: "b64_json"
   });
 
-  return json({ image: response.data[0].b64_json }, 201)
+  return json({ state: "success", image: response.data[0].b64_json }, 201)
 }

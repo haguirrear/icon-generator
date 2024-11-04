@@ -32,6 +32,9 @@ export const links: LinksFunction = () => [
   }
 ];
 
+
+export const shouldRevalidate = () => false
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUser(request)
   return {
