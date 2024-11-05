@@ -23,7 +23,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function LoginPage() {
 
-  return <div className="flex flex-col justify-center items-center h-full">
+  return <div className="flex flex-col justify-center items-center h-screen">
     <div className="py-80">
 
       <Card className="w-[350px]">

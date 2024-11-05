@@ -4,14 +4,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useRouteError,
-  useRouteLoaderData,
 } from "@remix-run/react";
 import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import tailwindHref from "./tailwind.css?url";
-import NavBar from "./components/NavBar";
 import { useState } from "react";
 import { getUser } from "./lib/auth/sessions.server";
 
@@ -35,16 +32,7 @@ export const links: LinksFunction = () => [
 
 export const shouldRevalidate = () => false
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const user = await getUser(request)
-  return {
-    "email": user?.email
-  }
-}
 export function Layout({ children }: { children: React.ReactNode }) {
-
-  const user = useRouteLoaderData<typeof loader>("root");
-  const error = useRouteError();
 
   return (
     <html lang="en" className="h-full">
@@ -55,7 +43,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className="h-full">
-        <NavBar email={user?.email} />
         {children}
         <ScrollRestoration />
         <Scripts />

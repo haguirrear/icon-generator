@@ -23,6 +23,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const codeVerifier = generateCodeVerifier()
   const authURL = provider.createAuthorizationURL(state, codeVerifier, ["openid", "profile", "email"])
 
+  // Currently only works for google
+  authURL.searchParams.set("prompt", "select_account")
+
+
+
   const oautCookieString = await oauthCookie.serialize({ state, codeVerifier, next })
 
   return redirect(authURL.toString(), {
