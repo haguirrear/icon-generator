@@ -2,21 +2,29 @@ import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, useLoaderData } from "@remix-run/react"
 import NavBar from "~/components/NavBar"
 import { getUser } from "~/lib/auth/sessions.server";
+import { getCredits } from "~/lib/repository/credits.server";
 
 
+export const shouldRevalidate = () => false
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUser(request)
+  if (!user) {
+    return null
+  }
+
+  const credits = await getCredits(user.id)
   return {
-    "email": user?.email
+    email: user.email,
+    credits
   }
 }
 
 
 export default function Layout() {
-  const { email } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
   return (
     <>
-      <NavBar email={email} />
+      <NavBar email={data?.email} credits={data?.credits} />
       <Outlet />
     </>
   )

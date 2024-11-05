@@ -37,7 +37,7 @@ export const colors = [
 
 export function ColorOption({ color, colorClass, checked, onChange }: { color: string, colorClass: string, checked: boolean, onChange: (event: React.ChangeEvent<HTMLInputElement>) => void }) {
   return <label className="relative">
-    <Input type="radio" name="color" value={color} checked={checked} className="sr-only peer" required onChange={onChange} />
+    <Input type="radio" name="color" value={color} checked={checked} className="sr-only peer" onChange={onChange} />
     <span className={`w-10 h-10 rounded-full ${colorClass} block cursor-pointer peer-checked:ring-2 peer-checked:ring-offset-2 hover:opacity-70`}></span>
   </label >
 }

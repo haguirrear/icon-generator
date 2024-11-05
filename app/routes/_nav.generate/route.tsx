@@ -1,16 +1,14 @@
-import type { ActionFunctionArgs, MetaFunction } from "@remix-run/node";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "~/components/ui/alert";
+import type { MetaFunction } from "@remix-run/node";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import Show from "~/components/utils/Show";
 import { ColorOption, colors, styles } from "./form-options";
-import { getUser } from "~/lib/auth/sessions.server";
-import { redirect, useFetcher, useSearchParams } from "@remix-run/react";
-import { generateIconAction } from "./action";
+import { Link, useFetcher, useLocation, useSearchParams } from "@remix-run/react";
+import { generateIconAction } from "./action.server";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "~/components/ui/alert-dialog";
 
 export const meta: MetaFunction = () => {
   return [
@@ -22,16 +20,7 @@ export const meta: MetaFunction = () => {
 
 export const shouldRevalidate = () => false
 
-export async function action({ request }: ActionFunctionArgs) {
-  const user = await getUser(request)
-  if (!user) {
-    const currentUrl = new URL(request.url)
-    const params = new URLSearchParams()
-    params.set("next", currentUrl.pathname + currentUrl.search)
-    return redirect(`/login?${params.toString()}`)
-  }
-  return generateIconAction(request)
-}
+export const action = generateIconAction
 
 export default function GenerateIconPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -40,6 +29,8 @@ export default function GenerateIconPage() {
     color: searchParams.get("color") || "",
     style: searchParams.get("style") || "",
   })
+
+  const [dialogIsOpen, setDialogIsOpen] = useState(false)
 
   useEffect(() => {
     const newSearchParams = new URLSearchParams()
@@ -51,18 +42,19 @@ export default function GenerateIconPage() {
   }, [formValues, setSearchParams])
 
   const fetcher = useFetcher<typeof action>()
-  const isSuccess = fetcher.data?.state === "success"
-  const isError = fetcher.data?.state === "error"
-  const resultImage = fetcher.data?.state === "success" ? fetcher.data.image : null
+  const isSuccess = fetcher.data?.type === "success"
+  const resultImage = fetcher.data?.type === "success" ? fetcher.data.image : null
 
   const imageRef = useRef<HTMLDivElement>(null)
   const errRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (fetcher.data?.state !== undefined) {
+    if (fetcher.data?.type === "success") {
       const ref = imageRef.current || errRef.current
       if (ref) {
         ref.scrollIntoView({ behavior: "smooth" })
       }
+    } else if (fetcher.data?.type === "not_enough_credits") {
+      setDialogIsOpen(true)
     }
   }, [fetcher.data])
 
@@ -76,6 +68,7 @@ export default function GenerateIconPage() {
 
   return (
     <div className="container m-auto mb-80 flex flex-col p-8 max-w-screen-md">
+      <BuyMoreCreditsDialog open={dialogIsOpen} onClose={() => setDialogIsOpen(false)} />
       <h1 className="text-3xl font-bold pb-4">Generate AI Logos</h1>
       <p> Your results may vary. We are working on fine tuning results for each style. Here are some tips to make better icons:</p>
       <ul className="list-disc list-inside pl-4">
@@ -86,15 +79,21 @@ export default function GenerateIconPage() {
       </ul>
       <div className="py-4">
         <fetcher.Form method="post" className="flex flex-col gap-4">
-          <div className="flex flex-col">
-            <label htmlFor="prompt" className="text-2xl pb-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="prompt" className="text-2xl">
               1. Describe your icon using a noun and adjective
+              {fetcher.data?.type === "form_error" && fetcher.data.error.prompt !== "" &&
+                <span className="pl-4 text-red-500 text-sm">{fetcher.data.error.prompt}</span>
+              }
             </label>
             <Input type="text" id="prompt" name="prompt" className="p-2" required value={formValues.prompt} onChange={handleChange} />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-2">
             <label htmlFor="color" className="text-2xl pb-2">
               2. Select a primary color for your icon
+              {fetcher.data?.type === "form_error" && fetcher.data.error.color !== "" &&
+                <span className="pl-4 text-red-500 text-sm">{fetcher.data.error.color}</span>
+              }
             </label>
             <div className="grid grid-cols-5 gap-3 p-2">
               {
@@ -104,9 +103,12 @@ export default function GenerateIconPage() {
               }
             </div>
           </div>
-          <div className="flex flex-col">
-            <label className="text-2xl pb-2">
+          <div className="flex flex-col gap-2">
+            <label className="text-2xl ">
               3. Select a style for your icon
+              {fetcher.data?.type === "form_error" && fetcher.data.error.style !== "" &&
+                <span className="pl-4 text-red-500 text-sm">{fetcher.data.error.style}</span>
+              }
             </label>
             <RadioGroup defaultValue="metallic" name="style" value={formValues.style} onValueChange={(value) => {
               setFormValues((prev) => ({
@@ -117,7 +119,7 @@ export default function GenerateIconPage() {
               {
                 styles.map((style) => (
                   <div key={style} className="flex items-center space-x-2">
-                    <RadioGroupItem value={style} id={style} required={true} />
+                    <RadioGroupItem value={style} id={style} />
                     <Label htmlFor={style}>{style}</Label>
                   </div>
                 ))
@@ -134,16 +136,30 @@ export default function GenerateIconPage() {
           <img src={`data:image/png;base64,${resultImage}`} alt="Generated icon" className="max-w-full rounded-lg object-cover shadow-sm shadow-black" />
         </div>
       </Show>
-      <Show when={isError}>
-        <Alert variant="destructive" ref={errRef}>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            There was an error generating the image
-          </AlertDescription>
-        </Alert>
-      </Show>
     </div >
   );
 }
 
+
+function BuyMoreCreditsDialog({ open: isOpen = false, onClose }: { open: boolean, onClose?: () => void }) {
+  const location = useLocation()
+  const nextUrl = `/credits?next=${encodeURIComponent(location.pathname + location.search)}`
+
+  return <AlertDialog open={isOpen}>
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>You don't have enough credits</AlertDialogTitle>
+        <AlertDialogDescription>
+          This action needs credits. Do you want to buy some more credits?
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
+        <AlertDialogAction asChild>
+          <Link to={nextUrl}>Buy Credits</Link>
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+}

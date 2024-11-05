@@ -30,7 +30,6 @@ export const links: LinksFunction = () => [
 ];
 
 
-export const shouldRevalidate = () => false
 
 export function Layout({ children }: { children: React.ReactNode }) {
 
