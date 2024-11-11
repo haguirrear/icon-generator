@@ -20,7 +20,7 @@ export const authProvidersTable = pgTable("auth_providers", {
   ...timestamps
 })
 
-export type User = InferSelectModel<typeof userTable>
+export type UserModel = InferSelectModel<typeof userTable>
 
 export type OauthProvider = typeof oauthProviderList[number]
 export type AuthProvider = InferSelectModel<typeof authProvidersTable>

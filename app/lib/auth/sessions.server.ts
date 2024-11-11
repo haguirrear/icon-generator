@@ -1,19 +1,21 @@
 import { Session, sessionTable } from "~/db/schema/sessions.server";
-import { User, userTable } from "~/db/schema/users.server";
+import { UserModel, userTable } from "~/db/schema/users.server";
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding"
 import { sha256 } from "@oslojs/crypto/sha2";
 import { db } from "~/db/config.server";
 import { eq } from "drizzle-orm";
 import { createCookie, redirect } from "@remix-run/node";
+import { Resource } from "sst";
 
 
 
 const sessionCookie = createCookie("__session", {
   httpOnly: true,
   sameSite: "lax",
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.IS_DEV !== "true",
   path: "/",
   maxAge: 60 * 60 * 24 * 30,
+  secrets: [Resource.SECRET_KEY.value]
 })
 
 
@@ -47,8 +49,10 @@ export async function getSession(request: Request) {
 
 export async function getUserOrFail(request: Request) {
   const user = await getUser(request)
+  const uri = new URL(request.url)
+  const currentUri = uri.pathname + "?" + uri.searchParams.toString()
   if (!user) {
-    throw redirect("/login", {
+    throw redirect("/login?" + new URLSearchParams([["next", currentUri]]).toString(), {
       headers: {
         "Set-Cookie": await removeSessionCookieHeader()
       }
@@ -120,5 +124,5 @@ export async function invalidateSession(sessionId: string): Promise<void> {
 
 
 export type SessionValidationResult =
-  | { session: Session, user: User }
+  | { session: Session, user: UserModel }
   | { session: null, user: null }

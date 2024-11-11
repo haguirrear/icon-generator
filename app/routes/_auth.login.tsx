@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
+import { useSearchParams } from "@remix-run/react";
 import { GoogleSignInButton } from "~/components/login/google";
 import {
   Card,
@@ -13,15 +14,18 @@ import { getUser } from "~/lib/auth/sessions.server";
 
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const next = new URL(request.url).searchParams.get("next") || "/"
   const user = await getUser(request)
   if (user) {
-    return redirect("/")
+    return redirect(next)
   }
 
   return null
 }
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams()
+  const next = searchParams.get("next") || undefined
 
   return <div className="flex flex-col justify-center items-center h-screen">
     <div className="py-80">
@@ -32,7 +36,7 @@ export default function LoginPage() {
           <CardDescription className="pt-4">Login using your preferred method</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center">
-          <GoogleSignInButton />
+          <GoogleSignInButton next={next} />
         </CardContent>
       </Card>
     </div>

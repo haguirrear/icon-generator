@@ -15,19 +15,23 @@ type GoogleClaims = {
 
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  console.log("Processing: ", request.url.toString())
   if (!params.provider || !isValidProviderName(params.provider)) {
     return new Response("not found", { status: 404 })
   }
 
+  console.log("Getting provider: ", params.provider)
   const provider = providersMap.get(params.provider)
   if (!provider) {
     return new Response(`No provider registered for ${params.provider}`, { status: 500 })
   }
 
+  console.log("Getting data from request")
   const url = new URL(request.url)
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
+  console.log("Getting data from cookies")
   const cookiesHeader = request.headers.get("cookie")
   const oauthCookieValues = await oauthCookie.parse(cookiesHeader) as OauthCookieValue || null
 
@@ -52,11 +56,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  console.log("Validating authorization code")
   let tokens: OAuth2Tokens;
   try {
     tokens = await provider.validateAuthorizationCode(code, oauthCookieValues.codeVerifier);
   } catch (e) {
-    console.log("Invalid code or code client credentials")
+    console.log("Invalid code or code client credentials", e)
 
     return new Response(null, {
       status: 400,
@@ -66,8 +71,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  console.log("Decoding idToken")
   const claims = decodeIdToken(tokens.idToken()) as GoogleClaims;
 
+  console.log("Getting user")
   const { user: existingUser } = await getUserOauth(params.provider, claims.sub);
   const next = oauthCookieValues.next || "/"
 

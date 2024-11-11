@@ -4,10 +4,11 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
-import { getUnitPrice } from "~/lib/payments/mercadopago.server";
+import { getUnitPrice } from "~/lib/payments/credits.server";
 import { MercadoPago } from "./mercadopago.client";
 import { ClientOnly } from "remix-utils/client-only"
-import { createPreference } from "./action";
+import { createPreference } from "./action.server";
+import Big from "big.js"
 
 export const action = createPreference
 export async function loader() {
@@ -37,7 +38,7 @@ export default function Route() {
           <CardTitle className="text-2xl">Buy Credits</CardTitle>
         </CardHeader>
         <CardContent>
-          <CreditForm unitPrice={data.unitPrice} onConfirm={(prefId) => {
+          <CreditForm unitPrice={Big(data.unitPrice)} onConfirm={(prefId) => {
             setPrefId(prefId)
           }} />
           <ClientOnly fallback={<div></div>}>
@@ -53,11 +54,11 @@ export default function Route() {
   </div >
 }
 
-function CreditForm({ unitPrice, onConfirm }: { unitPrice: number, onConfirm: (prefId: string) => void }) {
+function CreditForm({ unitPrice, onConfirm }: { unitPrice: Big, onConfirm: (prefId: string) => void }) {
   const [credits, setCredits] = useState("")
   const fetcher = useFetcher<typeof action>()
   const [confirmed, setConfirmed] = useState(false)
-  const [totalPrice, setTotalPrice] = useState(0)
+  const [totalPrice, setTotalPrice] = useState(Big(0))
 
   const [finishAnimation, setFinisAnimation] = useState(false)
 
@@ -78,7 +79,7 @@ function CreditForm({ unitPrice, onConfirm }: { unitPrice: number, onConfirm: (p
       <span>Amount to add</span>
       <Input type="number" name="credits" placeholder="0" value={credits} disabled={confirmed} onChange={(event) => {
         setCredits(event.target.value.replace(/\D/, ''))
-        setTotalPrice(Number(event.target.value) * unitPrice)
+        setTotalPrice(Big(event.target.value).times(unitPrice))
       }} />
       <div className="flex justify-end">
         <div className="text-sm text-muted-foreground">Total: $ {totalPrice.toFixed(2)}</div>

@@ -1,8 +1,8 @@
 import { HouseIcon, LogInIcon, LogOutIcon } from "lucide-react";
 import { Link } from "@remix-run/react";
 import Show from "./utils/Show";
-
 export default function NavBar({ email, credits }: { email?: string, credits?: number }) {
+  const cred = credits || 0
   return (
     <nav className="border-b border-gray-200 shadow-sm flex justify-between p-4">
       {/* Logo */}
@@ -14,7 +14,7 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
       <Show when={email !== undefined}>
         <div className="flex flex-col justify-center">
           <span>Hi {email}!</span>
-          <span>You have {credits} credits</span>
+          <span>You have {cred} credit{cred > 1 ? "s" : ""}</span>
         </div>
       </Show>
 
@@ -33,6 +33,6 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
           </Link>
         )}
       </div>
-    </nav>
+    </nav >
   );
 }

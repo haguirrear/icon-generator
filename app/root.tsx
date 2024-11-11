@@ -1,16 +1,19 @@
 import {
+  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteError,
 } from "@remix-run/react";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
+import type { LinksFunction } from "@remix-run/node";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import tailwindHref from "./tailwind.css?url";
 import { useState } from "react";
-import { getUser } from "./lib/auth/sessions.server";
+import { Page404 } from "./components/error/404";
+import { ErrorPage } from "./components/error/error";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -63,4 +66,22 @@ export default function App() {
   return <QueryClientProvider client={queryClient}>
     <Outlet />
   </QueryClientProvider>
+}
+
+
+export function ErrorBoundary() {
+  const error = useRouteError()
+
+  if (isRouteErrorResponse(error)) {
+    if (error.status === 404) {
+      return <Page404 />
+    }
+
+    console.log("Unknown error found: ", error)
+    return <ErrorPage status={error.status} errorCode={error.data.errorCode} />
+  }
+
+  console.log("Unknown error found: ", error)
+  return <ErrorPage />
+
 }

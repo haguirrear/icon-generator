@@ -1,7 +1,9 @@
-import { ActionFunctionArgs, json, TypedResponse } from "@remix-run/node";
+import { json, TypedResponse } from "@remix-run/node";
 import { Preference } from "mercadopago";
-import { getUnitPrice, mercadoPago } from "~/lib/payments/mercadopago.server";
+import { getUnitPrice, mercadoPago } from "~/lib/payments/credits.server";
 import { v4 } from "uuid"
+import { createReceipt } from "./queries.server";
+import actionWithUser from "~/lib/middleware.server";
 
 type ActionResp = {
   type: "error"
@@ -12,7 +14,7 @@ type ActionResp = {
 }
 
 
-export async function createPreference({ request }: ActionFunctionArgs): Promise<TypedResponse<ActionResp>> {
+export const createPreference = actionWithUser(async (user, { request }): Promise<TypedResponse<ActionResp>> => {
   const formData = await request.formData()
   const credits = formData.get("credits")
   if (!credits) {
@@ -25,24 +27,34 @@ export async function createPreference({ request }: ActionFunctionArgs): Promise
   }
 
   const unitPrice = await getUnitPrice()
-  const preference = new Preference(mercadoPago);
+  const id = v4()
+  await createReceipt({
+    id: id,
+    userId: user.id,
+    credits: creditNum,
+    unitPrice: unitPrice,
+    totalPrice: unitPrice.times(creditNum)
+  })
 
+
+  const preference = new Preference(mercadoPago);
   const resp = await preference.create({
     body: {
       items: [
         {
-          id: v4(),
+          id,
           title: "Credits",
           currency_id: "USD",
           quantity: creditNum,
-          unit_price: unitPrice
+          unit_price: unitPrice.toNumber()
         }
       ],
       auto_return: "approved",
+      external_reference: id,
       back_urls: {
-        failure: "http://localhost/credits/callback",
-        success: "http://localhost/credits/callback",
-        pending: "http://localhost/credits/callback"
+        failure: `${process.env.SITE_URL}/mercadopago/callback/failure`,
+        success: `${process.env.SITE_URL}/mercadopago/callback/success`,
+        pending: `${process.env.SITE_URL}/mercadopago/callback/pending`
       }
     }
   })
@@ -58,4 +70,4 @@ export async function createPreference({ request }: ActionFunctionArgs): Promise
     type: "success",
     preferenceId: resp.id
   }, 200)
-}
+})

@@ -8,7 +8,7 @@ import { ColorOption, colors, styles } from "./form-options";
 import { Link, useFetcher, useLocation, useSearchParams } from "@remix-run/react";
 import { generateIconAction } from "./action.server";
 import { ChangeEvent, useEffect, useRef, useState } from "react";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "~/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "~/components/ui/alert-dialog";
 
 export const meta: MetaFunction = () => {
   return [
@@ -17,8 +17,6 @@ export const meta: MetaFunction = () => {
   ];
 };
 
-
-export const shouldRevalidate = () => false
 
 export const action = generateIconAction
 
@@ -56,7 +54,7 @@ export default function GenerateIconPage() {
     } else if (fetcher.data?.type === "not_enough_credits") {
       setDialogIsOpen(true)
     }
-  }, [fetcher.data])
+  }, [fetcher.data, fetcher.state])
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target

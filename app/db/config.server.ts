@@ -1,17 +1,12 @@
 
-import { drizzle } from "drizzle-orm/node-postgres"
-import pg from "pg"
-import { pgTable, serial, text, varchar } from "drizzle-orm/pg-core"
+import { drizzle } from "drizzle-orm/postgres-js"
+import postgres from "postgres"
+import { Resource } from "sst"
 
-const { Pool } = pg
+console.log("Connecting to db: ", Resource.DATABASE_URL.value)
+const client = postgres(Resource.DATABASE_URL.value, { prepare: false })
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("Missing DATABASE_URL env")
-}
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
-})
+export const db = drizzle({ client: client, logger: process.env.IS_DEV === "true" })
 
-export const db = drizzle({ client: pool })
 

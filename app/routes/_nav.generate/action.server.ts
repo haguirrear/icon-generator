@@ -1,12 +1,16 @@
 import { ActionFunctionArgs, json, redirect, TypedResponse } from "@remix-run/node";
-
 import Together from "together-ai";
 import { getUser } from "~/lib/auth/sessions.server";
 import { getCredits } from "~/lib/repository/credits.server";
 import { error, hasError, Result, success } from "~/lib/result";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { Resource } from "sst";
+import { v4 as uuidv4 } from "uuid"
+import { fileTypeFromBuffer } from "file-type"
+import { substractCredits } from "./queries.server";
+import { getCreditsConfig } from "~/lib/payments/credits.server";
 
-const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
-const IMAGE_CREDIT_COST = 1
+const together = new Together({ apiKey: Resource.TOGETHER_API_KEY.value });
 
 type PromptParams = {
   prompt: string
@@ -22,6 +26,7 @@ type GenerateIconResponse = {
 } | {
   type: "success"
   image: string
+  url: string
 }
 
 export async function generateIconAction({ request }: ActionFunctionArgs): Promise<TypedResponse<GenerateIconResponse>> {
@@ -35,8 +40,11 @@ export async function generateIconAction({ request }: ActionFunctionArgs): Promi
   }
 
   const { prompt, color, style } = result.result
-  const credits = await getCredits(user.id)
-  if (credits < IMAGE_CREDIT_COST) {
+  const creditsPromise = getCredits(user.id)
+  const creditsConfigPromise = getCreditsConfig()
+
+  const [credits, creditsConfig] = await Promise.all([creditsPromise, creditsConfigPromise])
+  if (credits < creditsConfig.creditsPerImage) {
     return json({
       type: "not_enough_credits"
     }, 402)
@@ -53,7 +61,32 @@ export async function generateIconAction({ request }: ActionFunctionArgs): Promi
     response_format: "b64_json"
   });
 
-  return json({ type: "success", image: response.data[0].b64_json }, 201)
+  const b64Image = response.data[0].b64_json
+
+
+  await substractCredits({ userId: user.id, credits: creditsConfig.creditsPerImage })
+
+  const s3Url = await uploadBase64ImageToS3(b64Image, Resource.AssetsBucket.name, uuidv4())
+
+  return json({ type: "success", image: b64Image, url: s3Url }, 201)
+}
+
+
+async function uploadBase64ImageToS3(base64Image: string, bucketName: string, key: string): Promise<string> {
+  const buffer = Buffer.from(base64Image, "base64")
+
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: key,
+    Body: buffer,
+    ContentEncoding: "base64",
+    ContentType: (await fileTypeFromBuffer(buffer))?.mime
+  })
+
+  const s3 = new S3Client({})
+  await s3.send(command)
+
+  return `https://${bucketName}.s3.${await s3.config.region()}.amazonaws.com/${key}`
 }
 
 function buildPrompt(params: PromptParams): string {

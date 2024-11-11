@@ -5,6 +5,7 @@ import { isValidProviderName, oauthCookie, providersMap } from "~/lib/auth/oauth
 
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
+  console.log("Processing: ", request.url.toString())
   if (!params.provider || !isValidProviderName(params.provider)) {
     return new Response("not found", { status: 404 })
   }
@@ -16,8 +17,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url)
   const next = url.searchParams.get("next")
-
-  console.log("Started oauth with next: ", next)
 
   const state = generateState()
   const codeVerifier = generateCodeVerifier()
