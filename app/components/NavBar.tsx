@@ -1,6 +1,7 @@
 import { HouseIcon, LogInIcon, LogOutIcon } from "lucide-react";
 import { Link } from "@remix-run/react";
 import Show from "./utils/Show";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 export default function NavBar({ email, credits }: { email?: string, credits?: number }) {
   const cred = credits || 0
   return (
@@ -11,27 +12,27 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
         IconGenerator
       </Link>
 
-      <Show when={email !== undefined}>
-        <div className="flex flex-col justify-center">
-          <span>Hi {email}!</span>
-          <span>You have {cred} credit{cred > 1 ? "s" : ""}</span>
-        </div>
-      </Show>
-
       <div>
-        {email !== undefined ? (
-          <form method="post" action="/signout">
-            <button className="flex flex-col items-center gap-2">
-              <LogOutIcon />
-              <span className="text-xs font-bold uppercase">Sign out</span>
-            </button>
-          </form>
-        ) : (
+        <Show when={email !== undefined}>
+          <div className="flex flex-col justify-center items-end gap-2">
+            <div className="font-semibold">{email}</div>
+            <div className="flex gap-2 items-center justify-end w-full">
+              <div className="rounded-xl bg-primary text-primary-foreground px-2 py-1 text-sm">{cred} credit{cred > 1 || cred === 0 ? "s" : ""}</div>
+              <form method="post" action="/signout" title="Sign out" className="w-5 h-5">
+                <button type="submit">
+                  <LogOutIcon className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </Show>
+
+        <Show when={email === undefined}>
           <Link to="/login" className="flex flex-col items-center gap-2">
             <LogInIcon />
             <span className="text-xs font-bold uppercase">Login</span>
           </Link>
-        )}
+        </Show>
       </div>
     </nav >
   );
