@@ -1,8 +1,8 @@
 import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { decodeIdToken, OAuth2Tokens } from "arctic";
-import { createOauthUser, getUserOauth } from "./queries";
 import { isValidProviderName, oauthCookie, OauthCookieValue, providersMap } from "~/lib/auth/oauth.server";
 import { setSessionCookieHeader } from "~/lib/auth/sessions.server";
+import { createOauthUserDb, getUserOauthDb } from "~/lib/repository/oauth.server";
 
 type GoogleClaims = {
   sub: string
@@ -75,7 +75,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const claims = decodeIdToken(tokens.idToken()) as GoogleClaims;
 
   console.log("Getting user")
-  const { user: existingUser } = await getUserOauth(params.provider, claims.sub);
+  const { user: existingUser } = await getUserOauthDb({ provider: params.provider, externalId: claims.sub });
   const next = oauthCookieValues.next || "/"
 
   if (existingUser !== null) {
@@ -91,7 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // TODO: Replace this with your own DB query.
   // const user = await createUser(googleUserId, username);
   console.log("User does not exists, creating...")
-  const userId = await createOauthUser({
+  const userId = await createOauthUserDb({
     externalId: claims.sub,
     email: claims.email,
     userInfo: claims,

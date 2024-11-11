@@ -1,9 +1,10 @@
 import { json, LoaderFunctionArgs, redirect, TypedResponse } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
-import { getReceipt, updateReceipt, updateUserCredits } from "./queries.server";
 import { ReceiptStatus, ReceiptStatusSchema } from "~/db/schema/credits.server";
 import { Button } from "~/components/ui/button";
 import { getUserOrFail } from "~/lib/auth/sessions.server";
+import { getReceiptDb, updateReceiptDb } from "~/lib/repository/receipt.server";
+import { addCreditsDb } from "~/lib/repository/credits.server";
 
 type LoaderResponse = { type: "no_order_found", orderId: string } | { type: "success", status: ReceiptStatus, orderId: string, email: string, credits: number }
 
@@ -35,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs): Promise<T
   console.log("merchantOrderId: ", merchantOrderId)
   console.log("pathStatus: ", pathStatus)
 
-  const receipt = await getReceipt(externalReference)
+  const receipt = await getReceiptDb(externalReference)
   if (!receipt) {
     return json({ type: "no_order_found", orderId: externalReference }, 404)
   }
@@ -44,9 +45,9 @@ export async function loader({ request, params }: LoaderFunctionArgs): Promise<T
     throw new Response(null, { status: 404 })
   }
 
-  await updateReceipt({ id: receipt.id, status: pathStatus })
+  await updateReceiptDb({ id: receipt.id, status: pathStatus })
   if (pathStatus === "success") {
-    await updateUserCredits({ userId: user.id, addCredits: receipt.credits })
+    await addCreditsDb({ userId: user.id, addCredits: receipt.credits })
   }
 
   return redirect("/generate")

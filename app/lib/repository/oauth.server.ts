@@ -1,9 +1,8 @@
-
-import { and, eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm";
 import { db } from "~/db/config.server"
 import { authProvidersTable, OauthProvider, userTable } from "~/db/schema/users.server"
 
-export async function getUserOauth(provider: OauthProvider, externalId: string) {
+export async function getUserOauthDb({ provider, externalId }: { provider: OauthProvider, externalId: string }) {
   const result = await db.select({ user: userTable, authProvider: authProvidersTable })
     .from(authProvidersTable)
     .innerJoin(userTable, eq(authProvidersTable.userId, userTable.id))
@@ -21,7 +20,7 @@ export async function getUserOauth(provider: OauthProvider, externalId: string) 
   return { user, userInfo: authProvider.userInfo }
 }
 
-export async function createOauthUser({ externalId, email, userInfo, provider }: {
+export async function createOauthUserDb({ externalId, email, userInfo, provider }: {
   externalId: string,
   email: string
   userInfo: unknown,
@@ -39,3 +38,5 @@ export async function createOauthUser({ externalId, email, userInfo, provider }:
 
   return userId
 }
+
+

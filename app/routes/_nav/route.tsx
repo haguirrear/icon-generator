@@ -1,8 +1,8 @@
-import { defer, LoaderFunctionArgs } from "@remix-run/node";
+import { LoaderFunctionArgs } from "@remix-run/node";
 import { Outlet, ShouldRevalidateFunctionArgs, useLoaderData } from "@remix-run/react"
 import NavBar from "~/components/NavBar"
 import { getUser } from "~/lib/auth/sessions.server";
-import { getCredits } from "~/lib/repository/credits.server";
+import { getCreditsDb } from "~/lib/repository/credits.server";
 
 export function shouldRevalidate({ formMethod, defaultShouldRevalidate }: ShouldRevalidateFunctionArgs) {
   if (formMethod === "GET" || formMethod === undefined) {
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return null
   }
 
-  const credits = await getCredits(user.id)
+  const credits = await getCreditsDb(user.id)
   return {
     email: user.email,
     credits

@@ -1,11 +1,10 @@
-import { Session, sessionTable } from "~/db/schema/sessions.server";
-import { UserModel, userTable } from "~/db/schema/users.server";
+import { SessionModel } from "~/db/schema/sessions.server";
+import { UserModel } from "~/db/schema/users.server";
 import { encodeBase32LowerCaseNoPadding, encodeHexLowerCase } from "@oslojs/encoding"
 import { sha256 } from "@oslojs/crypto/sha2";
-import { db } from "~/db/config.server";
-import { eq } from "drizzle-orm";
 import { createCookie, redirect } from "@remix-run/node";
 import { Resource } from "sst";
+import { createSessionDb, deleteSessionDb, getUserSessionDb, updateSessionDb } from "../repository/session.server";
 
 
 
@@ -70,16 +69,14 @@ export function generateSessionToken(): string {
   return token;
 }
 
-export async function createSession(token: string, userId: number): Promise<Session> {
+export async function createSession(token: string, userId: number): Promise<SessionModel> {
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-  const session: Session = {
+  return createSessionDb({
     id: sessionId,
     userId,
     // Expires in 30 days
     expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
-  };
-  await db.insert(sessionTable).values(session);
-  return session;
+  })
 }
 
 export async function validateSessionToken(token: string): Promise<SessionValidationResult> {
@@ -88,41 +85,33 @@ export async function validateSessionToken(token: string): Promise<SessionValida
   }
 
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-  const result = await db
-    .select({ user: userTable, session: sessionTable })
-    .from(sessionTable)
-    .innerJoin(userTable, eq(sessionTable.userId, userTable.id))
-    .where(eq(sessionTable.id, sessionId));
-  if (result.length < 1) {
+  const { user, session } = await getUserSessionDb({ sessionId })
+  if (!user) {
     return { user: null, session: null }
   }
-  const { user, session } = result[0];
 
   // Delete if already expired
   if (Date.now() >= session.expiresAt.getTime()) {
-    await db.delete(sessionTable).where(eq(sessionTable.id, session.id));
+    await deleteSessionDb(session.id)
     return { user: null, session: null }
   }
 
   // If it is about to expire (less than 15 days) we renew the session
-  if (Date.now() >= session.expiresAt.getTime() - 1000 * 60 * 60 * 24 * 15) {
-    session.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
-    await db
-      .update(sessionTable)
-      .set({
-        expiresAt: session.expiresAt
-      })
-      .where(eq(sessionTable.id, session.id));
+  const _15Days = 1000 * 60 * 60 * 24 * 15
+  if (Date.now() + _15Days >= session.expiresAt.getTime()) {
+    await updateSessionDb(session.id, {
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
+    })
   }
   return { user, session };
 }
 
 export async function invalidateSession(sessionId: string): Promise<void> {
-  await db.delete(sessionTable).where(eq(sessionTable.id, sessionId))
+  await deleteSessionDb(sessionId)
 }
 
 
 
 export type SessionValidationResult =
-  | { session: Session, user: UserModel }
+  | { session: SessionModel, user: UserModel }
   | { session: null, user: null }

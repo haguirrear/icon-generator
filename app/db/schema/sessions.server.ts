@@ -10,4 +10,4 @@ export const sessionTable = pgTable("sessions", {
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 })
 
-export type Session = InferSelectModel<typeof sessionTable>
+export type SessionModel = InferSelectModel<typeof sessionTable>

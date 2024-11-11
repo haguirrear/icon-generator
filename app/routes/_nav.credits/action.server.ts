@@ -2,8 +2,8 @@ import { json, TypedResponse } from "@remix-run/node";
 import { Preference } from "mercadopago";
 import { getUnitPrice, mercadoPago } from "~/lib/payments/credits.server";
 import { v4 } from "uuid"
-import { createReceipt } from "./queries.server";
 import actionWithUser from "~/lib/middleware.server";
+import { createReceiptDb } from "~/lib/repository/receipt.server";
 
 type ActionResp = {
   type: "error"
@@ -28,7 +28,7 @@ export const createPreference = actionWithUser(async (user, { request }): Promis
 
   const unitPrice = await getUnitPrice()
   const id = v4()
-  await createReceipt({
+  await createReceiptDb({
     id: id,
     userId: user.id,
     credits: creditNum,
