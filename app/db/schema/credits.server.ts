@@ -20,14 +20,19 @@ export const creditsUsersTable = pgTable("credits_users", {
   ...timestamps
 })
 
-
+// Enums
 export const statusList = ["pending", "success", "failure"] as const
 export const ReceiptStatusSchema = z.enum(statusList)
 export type ReceiptStatus = z.infer<typeof ReceiptStatusSchema>
-export type ReceiptsModel = InferSelectModel<typeof receiptsTable>
+
+export const paymentProviderList = ["mercadopago"] as const
+export const PaymentProviderSchema = z.enum(paymentProviderList)
+export type PaymentProvider = z.infer<typeof PaymentProviderSchema>
 
 export const receiptsTable = pgTable("receipts", {
   id: uuid().primaryKey(),
+  provider: varchar({ enum: paymentProviderList }).notNull(),
+  providerRefId: varchar("provider_ref_id").notNull(),
   userId: integer("user_id").notNull().references(() => userTable.id),
   credits: integer("credits").notNull(),
   unitPrice: numeric("unit_price", { precision: 10, scale: 2 }).notNull(),
@@ -36,4 +41,4 @@ export const receiptsTable = pgTable("receipts", {
   ...timestamps
 })
 
-
+export type ReceiptsModel = InferSelectModel<typeof receiptsTable>

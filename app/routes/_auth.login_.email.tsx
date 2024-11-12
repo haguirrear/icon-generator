@@ -1,8 +1,8 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { HouseIcon } from "lucide-react";
-import { Form, useActionData, useNavigation, useSearchParams, useSubmit } from "@remix-run/react";
+import { Form, useActionData, useNavigation, useSubmit } from "@remix-run/react";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "~/components/ui/input-otp";
-import { REGEXP_ONLY_DIGITS, REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
 import { useEffect, useRef, useState } from "react";
 import { getEmailCodeUserDb, invalidateEmailCodeDb } from "~/lib/repository/oauth.server";
 import { setSessionCookieHeader } from "~/lib/auth/sessions.server";
@@ -53,8 +53,6 @@ export default function EmailLogin() {
   let data = useActionData<typeof action>()
   const otp = useRef<HTMLInputElement>(null)
   const form = useRef<HTMLFormElement>(null)
-
-  console.log("action resp:", data)
 
   const [code, setCode] = useState("")
   const [showErr, setShowErr] = useState(true)

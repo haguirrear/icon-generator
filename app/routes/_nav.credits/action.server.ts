@@ -28,13 +28,6 @@ export const createPreference = actionWithUser(async (user, { request }): Promis
 
   const unitPrice = await getUnitPrice()
   const id = v4()
-  await createReceiptDb({
-    id: id,
-    userId: user.id,
-    credits: creditNum,
-    unitPrice: unitPrice,
-    totalPrice: unitPrice.times(creditNum)
-  })
 
 
   const preference = new Preference(mercadoPago);
@@ -65,6 +58,17 @@ export const createPreference = actionWithUser(async (user, { request }): Promis
       error: "unknown error"
     })
   }
+
+  await createReceiptDb({
+    id: id,
+    provider: "mercadopago",
+    providerRefId: resp.id,
+    userId: user.id,
+    credits: creditNum,
+    unitPrice: unitPrice,
+    totalPrice: unitPrice.times(creditNum)
+  })
+
 
   return json({
     type: "success",
