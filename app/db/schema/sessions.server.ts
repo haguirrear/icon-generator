@@ -3,7 +3,6 @@ import { userTable } from "./users.server";
 
 import { InferSelectModel } from "drizzle-orm"
 
-
 export const sessionTable = pgTable("sessions", {
   id: varchar("id", { length: 255 }).primaryKey(),
   userId: integer("user_id").notNull().references(() => userTable.id),
@@ -11,3 +10,4 @@ export const sessionTable = pgTable("sessions", {
 })
 
 export type SessionModel = InferSelectModel<typeof sessionTable>
+

@@ -1,5 +1,5 @@
 import { Link } from "@remix-run/react"
-import astronaut from "~/assets/astronaut.svg"
+import astronaut from "/astronaut.svg"
 import { Button } from "~/components/ui/button"
 
 export function Page404() {

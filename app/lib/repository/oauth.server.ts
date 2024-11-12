@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import { db } from "~/db/config.server"
-import { authProvidersTable, OauthProvider, userTable } from "~/db/schema/users.server"
+import { authProvidersTable, emailCodeTable, OauthProvider, UserModel, userTable } from "~/db/schema/users.server"
 
 export async function getUserOauthDb({ provider, externalId }: { provider: OauthProvider, externalId: string }) {
   const result = await db.select({ user: userTable, authProvider: authProvidersTable })
@@ -39,4 +39,29 @@ export async function createOauthUserDb({ externalId, email, userInfo, provider 
   return userId
 }
 
+export async function createEmailCodeDb({ code, expiresAt, userId }: { code: string, expiresAt: Date, userId: number }) {
+  await db.insert(emailCodeTable).values({
+    code,
+    expiresAt,
+    userId
+  })
+}
 
+export async function getEmailCodeUserDb({ email, code }: { email: string, code: string }): Promise<UserModel | null> {
+  const results = await db.select({ ...getTableColumns(userTable) }).from(emailCodeTable)
+    .innerJoin(userTable, eq(emailCodeTable.userId, userTable.id))
+    .where(
+      and(
+        eq(emailCodeTable.code, code),
+        eq(emailCodeTable.used, false),
+        eq(userTable.email, email)
+      )
+    ).limit(1)
+
+  if (results.length === 0) {
+    return null
+  }
+
+  return results[0]
+
+}

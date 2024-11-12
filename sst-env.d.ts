@@ -14,6 +14,11 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "EmailProvider": {
+      "configSet": string
+      "sender": string
+      "type": "sst.aws.Email"
+    }
     "GOOGLE_CLIENT_ID": {
       "type": "sst.sst.Secret"
       "value": string

@@ -34,13 +34,22 @@ export default $config({
     ])
 
 
+    // Infrastructure
+
     const bucket = new sst.aws.Bucket("AssetsBucket", {
       access: "public"
     })
 
+    const email = $app.stage === "haguirrear"
+      ? sst.aws.Email.get("EmailProvider", "hector.aguirre.arista@gmail.com")
+      : new sst.aws.Email("EmailProvider", {
+        sender: "hector.aguirre.arista@gmail.com"
+      })
+
     const remixApp = new sst.aws.Remix("RemixApp", {
       link: [
         bucket,
+        email,
         DATABASE_URL,
         MERCADO_PAGO_ACCESS_TOKEN,
         TOGETHER_API_KEY,
@@ -77,7 +86,8 @@ export default $config({
     })
 
     return {
-      remixAppUrl: remixApp.url
+      remixAppUrl: remixApp.url,
+      email
     }
   },
 });

@@ -1,5 +1,5 @@
 import { InferSelectModel } from "drizzle-orm"
-import { integer, jsonb, pgTable, varchar } from "drizzle-orm/pg-core"
+import { boolean, integer, jsonb, pgTable, timestamp, varchar } from "drizzle-orm/pg-core"
 import { timestamps } from "./helpers.server"
 
 export const userTable = pgTable("users", {
@@ -24,3 +24,14 @@ export type UserModel = InferSelectModel<typeof userTable>
 
 export type OauthProvider = typeof oauthProviderList[number]
 export type AuthProvider = InferSelectModel<typeof authProvidersTable>
+
+
+export const emailCodeTable = pgTable("email_code", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").notNull().references(() => userTable.id),
+  code: varchar().notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean().default(false)
+})
+
+export type EmailCode = InferSelectModel<typeof emailCodeTable>

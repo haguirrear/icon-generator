@@ -1,13 +1,12 @@
 import { HouseIcon, LogInIcon, LogOutIcon } from "lucide-react";
 import { Link } from "@remix-run/react";
 import Show from "./utils/Show";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 export default function NavBar({ email, credits }: { email?: string, credits?: number }) {
   const cred = credits || 0
   return (
-    <nav className="border-b border-gray-200 shadow-sm flex justify-between p-4">
+    <nav className="border-b border-border shadow-sm flex justify-between p-4">
       {/* Logo */}
-      <Link to="/" className="text-xl font-semibold text-gray-900 flex gap-2 items-center">
+      <Link to="/" className="text-xl font-semibold flex gap-2 items-center">
         <HouseIcon />
         IconGenerator
       </Link>
