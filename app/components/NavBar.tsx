@@ -1,6 +1,7 @@
 import { HouseIcon, LogInIcon, LogOutIcon } from "lucide-react";
 import { Link } from "@remix-run/react";
 import Show from "./utils/Show";
+
 export default function NavBar({ email, credits }: { email?: string, credits?: number }) {
   const cred = credits || 0
   return (

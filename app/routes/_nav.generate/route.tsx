@@ -40,17 +40,13 @@ export default function GenerateIconPage() {
   }, [formValues, setSearchParams])
 
   const fetcher = useFetcher<typeof action>()
-  const isSuccess = fetcher.data?.type === "success"
-  const resultImage = fetcher.data?.type === "success" ? fetcher.data.image : null
 
-  const imageRef = useRef<HTMLDivElement>(null)
-  const errRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (fetcher.data?.type === "success") {
-      const ref = imageRef.current || errRef.current
-      if (ref) {
-        ref.scrollIntoView({ behavior: "smooth" })
-      }
+    if (fetcher.data?.type === "success" && fetcher.state === "loading") {
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
+        behavior: 'smooth'
+      });
     } else if (fetcher.data?.type === "not_enough_credits") {
       setDialogIsOpen(true)
     }
@@ -129,11 +125,10 @@ export default function GenerateIconPage() {
           </div>
         </fetcher.Form>
       </div >
-      <Show when={isSuccess}>
-        <div className="p-4" ref={imageRef}>
-          <img src={`data:image/png;base64,${resultImage}`} alt="Generated icon" className="max-w-full rounded-lg object-cover shadow-sm shadow-black" />
-        </div>
-      </Show>
+      {fetcher.data?.type === "success" &&
+        <div className="p-4">
+          <img src={fetcher.data.url} alt="Generated icon" className="max-w-full rounded-lg object-cover shadow-sm shadow-black" />
+        </div>}
     </div >
   );
 }

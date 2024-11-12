@@ -1,10 +1,17 @@
 import { LoaderFunctionArgs } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react"
+import { Outlet, ShouldRevalidateFunctionArgs, useLoaderData } from "@remix-run/react"
 import NavBar from "~/components/NavBar"
 import { getUser } from "~/lib/auth/sessions.server";
 import { getCreditsDb } from "~/lib/repository/credits.server";
 
-export const shouldRevalidate = () => false
+export const shouldRevalidate = (args: ShouldRevalidateFunctionArgs) => {
+  console.log("should revalidate navbar, args: ", args)
+  if (args.currentUrl.pathname === "/generate" && args.formMethod === "POST") {
+    return args.defaultShouldRevalidate
+  }
+
+  return false
+}
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = await getUser(request)

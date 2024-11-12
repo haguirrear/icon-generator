@@ -26,7 +26,7 @@ export type OauthProvider = typeof oauthProviderList[number]
 export type AuthProvider = InferSelectModel<typeof authProvidersTable>
 
 
-export const emailCodeTable = pgTable("email_code", {
+export const emailCodeTable = pgTable("email_codes", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   userId: integer("user_id").notNull().references(() => userTable.id),
   code: varchar().notNull(),
@@ -35,3 +35,13 @@ export const emailCodeTable = pgTable("email_code", {
 })
 
 export type EmailCode = InferSelectModel<typeof emailCodeTable>
+
+
+export const userImageTable = pgTable("user_images", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").notNull().references(() => userTable.id),
+  prompt: varchar().notNull(),
+  imageKey: varchar().notNull(),
+})
+
+export type UserImageModel = InferSelectModel<typeof userImageTable>

@@ -7,6 +7,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 import { Resource } from "sst";
 import { v4 as uuidv4 } from "uuid"
 import { fileTypeFromBuffer } from "file-type"
+import { createUserImage } from "~/lib/repository/user.server";
 
 const together = new Together({ apiKey: Resource.TOGETHER_API_KEY.value });
 
@@ -23,7 +24,6 @@ type GenerateIconResponse = {
   type: "not_enough_credits"
 } | {
   type: "success"
-  image: string
   url: string
 }
 
@@ -48,9 +48,11 @@ export async function generateIconAction({ request }: ActionFunctionArgs): Promi
     }, 402)
   }
 
+  // TODO: Improve this in a transaction
+  const finalprompt = buildPrompt({ prompt, color, style })
   const response = await together.images.create({
     model: "black-forest-labs/FLUX.1-schnell-Free",
-    prompt: buildPrompt({ prompt, color, style }),
+    prompt: finalprompt,
     width: 1024,
     height: 768,
     steps: 1,
@@ -61,12 +63,13 @@ export async function generateIconAction({ request }: ActionFunctionArgs): Promi
 
   const b64Image = response.data[0].b64_json
 
-
+  const imageKey = uuidv4() + ".png"
   await substractCreditsDb({ userId: user.id, credits: creditsConfig.creditsPerImage })
+  await createUserImage({ userId: user.id, prompt: finalprompt, imageKey })
 
-  const s3Url = await uploadBase64ImageToS3(b64Image, Resource.AssetsBucket.name, uuidv4())
+  const s3Url = await uploadBase64ImageToS3(b64Image, Resource.AssetsBucket.name, imageKey)
 
-  return json({ type: "success", image: b64Image, url: s3Url }, 201)
+  return json({ type: "success", url: s3Url }, 201)
 }
 
 

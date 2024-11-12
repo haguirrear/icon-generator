@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "~/db/config.server";
-import { UserModel, userTable } from "~/db/schema/users.server";
+import { userImageTable, UserModel, userTable } from "~/db/schema/users.server";
 
 
 
@@ -22,4 +22,13 @@ export async function createUserDb({ email }: {
     .returning()
 
   return user
+}
+
+
+export async function createUserImage({ prompt, imageKey, userId }: { prompt: string, imageKey: string, userId: number }) {
+  await db.insert(userImageTable).values({
+    userId,
+    prompt,
+    imageKey
+  })
 }
