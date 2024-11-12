@@ -87,7 +87,7 @@ export default $config({
 
     return {
       remixAppUrl: remixApp.url,
-      email
+      EmailProvider: email.getSSTLink().properties.sender
     }
   },
 });

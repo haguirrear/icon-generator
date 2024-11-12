@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getTableColumns, gte } from "drizzle-orm";
 import { db } from "~/db/config.server"
 import { authProvidersTable, emailCodeTable, OauthProvider, UserModel, userTable } from "~/db/schema/users.server"
 
@@ -47,6 +47,15 @@ export async function createEmailCodeDb({ code, expiresAt, userId }: { code: str
   })
 }
 
+export async function invalidateEmailCodeDb({ code, userId }: { code: string, userId: number }) {
+  await db.update(emailCodeTable).set({
+    used: true
+  }).where(and(
+    eq(emailCodeTable.code, code),
+    eq(emailCodeTable.userId, userId),
+  ))
+}
+
 export async function getEmailCodeUserDb({ email, code }: { email: string, code: string }): Promise<UserModel | null> {
   const results = await db.select({ ...getTableColumns(userTable) }).from(emailCodeTable)
     .innerJoin(userTable, eq(emailCodeTable.userId, userTable.id))
@@ -54,7 +63,8 @@ export async function getEmailCodeUserDb({ email, code }: { email: string, code:
       and(
         eq(emailCodeTable.code, code),
         eq(emailCodeTable.used, false),
-        eq(userTable.email, email)
+        eq(userTable.email, email),
+        gte(emailCodeTable.expiresAt, new Date(Date.now()))
       )
     ).limit(1)
 
