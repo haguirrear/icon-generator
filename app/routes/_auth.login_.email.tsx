@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { HouseIcon } from "lucide-react";
+import { MailCheckIcon } from "lucide-react";
 import { Form, useActionData, useNavigation, useSubmit } from "@remix-run/react";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "~/components/ui/input-otp";
 import { REGEXP_ONLY_DIGITS_AND_CHARS } from "input-otp";
@@ -14,7 +14,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!email) {
     throw new Response("Bad Request", { status: 400 })
   }
-
 
   return null
 }
@@ -70,7 +69,7 @@ export default function EmailLogin() {
 
   return <div className="flex flex-col items-center justify-center h-screen">
     <div className="max-w-screen-sm flex flex-col items-center gap-2">
-      <div className="py-2"><HouseIcon /></div>
+      <div className="py-2"><MailCheckIcon className="w-20 h-20" /></div>
       <h1 className="font-semibold text-xl">Let's verify your email</h1>
       <p className="pb-6">Check your inbox for the code that was sent to you</p>
       <Form ref={form} method="POST" replace >
@@ -82,14 +81,25 @@ export default function EmailLogin() {
             setCode(value.toUpperCase())
             if (value.length === 6) {
               submit(form.current, { method: "POST", replace: true })
-              data = undefined
-
             }
           }}
           onPaste={(event) => {
-            console.log(event.clipboardData)
-            const value = event.clipboardData.getData("text").slice(0, 6)
+            event.preventDefault()
+            const pasted = event.clipboardData.getData("text")
+            console.log("Pasted: ", pasted)
+            const matches = pasted.slice(0, 6).toUpperCase().match(REGEXP_ONLY_DIGITS_AND_CHARS)
+            console.log("Matches: ", matches)
+            if (!matches) {
+              return
+            }
+
+            const value = matches[0]
+
             setCode(value)
+            if (value.length === 6) {
+              console.log("submittin with code: ", value)
+              submit({ code: value }, { method: "POST", replace: true })
+            }
           }}
         >
           <InputOTPGroup>
