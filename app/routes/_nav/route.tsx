@@ -5,7 +5,6 @@ import { getUser } from "~/lib/auth/sessions.server";
 import { getCreditsDb } from "~/lib/repository/credits.server";
 
 export const shouldRevalidate = (args: ShouldRevalidateFunctionArgs) => {
-  console.log("should revalidate navbar, args: ", args)
   if (args.currentUrl.pathname === "/generate" && args.formMethod === "POST") {
     return args.defaultShouldRevalidate
   }

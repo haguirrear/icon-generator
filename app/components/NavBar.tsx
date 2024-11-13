@@ -13,10 +13,11 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
       </Link>
 
       <div>
-        <Show when={email !== undefined}>
+        {email &&
           <div className="flex flex-col justify-center items-end gap-2">
-            <div className="font-semibold">{email}</div>
+            <Link to="/profile" className="font-semibold hover:text-muted">{email}</Link>
             <div className="flex gap-2 items-center justify-end w-full">
+
               <div className="rounded-xl bg-primary text-primary-foreground px-2 py-1 text-sm">{cred} credit{cred > 1 || cred === 0 ? "s" : ""}</div>
               <form method="post" action="/signout" title="Sign out" className="w-5 h-5">
                 <button type="submit">
@@ -25,7 +26,7 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
               </form>
             </div>
           </div>
-        </Show>
+        }
 
         <Show when={email === undefined}>
           <Link to="/login" className="flex flex-col items-center gap-2">

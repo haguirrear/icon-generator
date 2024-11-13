@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { db } from "~/db/config.server";
-import { userImageTable, UserModel, userTable } from "~/db/schema/users.server";
+import { UserImageModel, userImageTable, UserModel, userTable } from "~/db/schema/users.server";
 
 
 
@@ -31,4 +31,14 @@ export async function createUserImage({ prompt, imageKey, userId }: { prompt: st
     prompt,
     imageKey
   })
+}
+
+export async function getUserImages(userId: number): Promise<UserImageModel[]> {
+  const results = await db.select().from(userImageTable)
+    .where(and(
+      eq(userImageTable.userId, userId),
+      isNull(userImageTable.deletedAt)
+    ))
+
+  return results
 }

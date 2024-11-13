@@ -31,7 +31,8 @@ export const emailCodeTable = pgTable("email_codes", {
   userId: integer("user_id").notNull().references(() => userTable.id),
   code: varchar().notNull(),
   expiresAt: timestamp("expires_at").notNull(),
-  used: boolean().default(false)
+  used: boolean().default(false),
+  ...timestamps
 })
 
 export type EmailCode = InferSelectModel<typeof emailCodeTable>
@@ -42,6 +43,7 @@ export const userImageTable = pgTable("user_images", {
   userId: integer("user_id").notNull().references(() => userTable.id),
   prompt: varchar().notNull(),
   imageKey: varchar().notNull(),
+  ...timestamps
 })
 
 export type UserImageModel = InferSelectModel<typeof userImageTable>
