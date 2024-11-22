@@ -58,7 +58,7 @@ export default $config({
         SECRET_KEY,
       ],
       environment: {
-        NODE_ENV: $app.stage,
+        NODE_ENV: ["dev", "production"].includes($app.stage) ? "production" : "dev",
         IS_DEV: $dev.toString(),
         SITE_URL: $dev ? "http://localhost:5173" : siteUrlMap.get($app.stage) || "",
         HOST: $dev ? "localhost" : hostMap.get($app.stage) || "",
