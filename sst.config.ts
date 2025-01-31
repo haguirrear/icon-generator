@@ -18,7 +18,7 @@ export default $config({
     // Secrets
     const DATABASE_URL = new sst.Secret("DATABASE_URL");
     const MERCADO_PAGO_ACCESS_TOKEN = new sst.Secret(
-      "MERCADO_PAGO_ACCESS_TOKEN",
+      "MERCADO_PAGO_ACCESS_TOKEN"
     );
     const TOGETHER_API_KEY = new sst.Secret("TOGETHER_API_KEY");
     const GOOGLE_CLIENT_ID = new sst.Secret("GOOGLE_CLIENT_ID");
@@ -27,7 +27,8 @@ export default $config({
     // Env Vars
     const hostMap = new Map([
       ["production", ""],
-      ["dev", "d1w4cpv7i8zop8.cloudfront.net"],
+      // ["dev", "d1w4cpv7i8zop8.cloudfront.net"],
+      ["dev", "www.therevol.co"],
     ]);
     const siteUrlMap = new Map([
       ["production", ""],

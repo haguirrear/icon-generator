@@ -16,6 +16,9 @@ export default {
           '"Segoe UI Symbol"',
           '"Noto Color Emoji"',
         ],
+        satoshi: ['"Satoshi"', "sans-serif"],
+        dmsans: ['"DM Sans"', "serif"],
+        ubuntu: ['"Ubuntu"', "sans-serif"],
       },
       borderRadius: {
         lg: "var(--radius)",

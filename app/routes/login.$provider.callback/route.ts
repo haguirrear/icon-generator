@@ -1,107 +1,129 @@
 import { redirect, type LoaderFunctionArgs } from "@remix-run/node";
 import { decodeIdToken, OAuth2Tokens } from "arctic";
-import { isValidProviderName, oauthCookie, OauthCookieValue, providersMap } from "~/lib/auth/oauth.server";
+import {
+  isValidProviderName,
+  oauthCookie,
+  OauthCookieValue,
+  providersMap,
+} from "~/lib/auth/oauth.server";
 import { setSessionCookieHeader } from "~/lib/auth/sessions.server";
-import { createOauthUserDb, getUserOauthDb } from "~/lib/repository/oauth.server";
+import {
+  createOauthUserDb,
+  getUserOauthDb,
+} from "~/lib/repository/oauth.server";
 
 type GoogleClaims = {
-  sub: string
-  name: string
-  picture: string
-  given_name: string
-  family_name: string
-  email: string
-}
-
+  sub: string;
+  name: string;
+  picture: string;
+  given_name: string;
+  family_name: string;
+  email: string;
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  console.log("Processing: ", request.url.toString())
+  console.log("Processing: ", request.url.toString());
   if (!params.provider || !isValidProviderName(params.provider)) {
-    return new Response("not found", { status: 404 })
+    return new Response("not found", { status: 404 });
   }
 
-  console.log("Getting provider: ", params.provider)
-  const provider = providersMap.get(params.provider)
+  console.log("Getting provider: ", params.provider);
+  const provider = providersMap.get(params.provider);
   if (!provider) {
-    return new Response(`No provider registered for ${params.provider}`, { status: 500 })
+    return new Response(`No provider registered for ${params.provider}`, {
+      status: 500,
+    });
   }
 
-  console.log("Getting data from request")
-  const url = new URL(request.url)
+  console.log("Getting data from request");
+  const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
-  console.log("Getting data from cookies")
-  const cookiesHeader = request.headers.get("cookie")
-  const oauthCookieValues = await oauthCookie.parse(cookiesHeader) as OauthCookieValue || null
+  console.log("Getting data from cookies");
+  const cookiesHeader = request.headers.get("cookie");
+  const oauthCookieValues =
+    ((await oauthCookie.parse(cookiesHeader)) as OauthCookieValue) || null;
 
-  const deletedOauthCookie = await oauthCookie.serialize("", { maxAge: undefined, expires: new Date(0) })
+  const deletedOauthCookie = await oauthCookie.serialize("", {
+    maxAge: undefined,
+    expires: new Date(0),
+  });
 
-  if (code === null || state === null || oauthCookieValues.state === null || oauthCookieValues.codeVerifier === null) {
-    console.log("either code, state, storedstate or codeverifier are null")
+  if (
+    code === null ||
+    state === null ||
+    oauthCookieValues.state === null ||
+    oauthCookieValues.codeVerifier === null
+  ) {
+    console.log("either code, state, storedstate or codeverifier are null");
     return new Response(null, {
       status: 400,
       headers: {
-        "Set-Cookie": deletedOauthCookie
-      }
+        "Set-Cookie": deletedOauthCookie,
+      },
     });
   }
   if (state !== oauthCookieValues.state) {
-    console.log("state is different than storedState")
+    console.log("state is different than storedState");
     return new Response(null, {
       status: 400,
       headers: {
-        "Set-Cookie": deletedOauthCookie
-      }
+        "Set-Cookie": deletedOauthCookie,
+      },
     });
   }
 
-  console.log("Validating authorization code")
+  console.log("Validating authorization code");
   let tokens: OAuth2Tokens;
   try {
-    tokens = await provider.validateAuthorizationCode(code, oauthCookieValues.codeVerifier);
+    tokens = await provider.validateAuthorizationCode(
+      code,
+      oauthCookieValues.codeVerifier
+    );
   } catch (e) {
-    console.log("Invalid code or code client credentials", e)
+    console.log("Invalid code or code client credentials", e);
 
     return new Response(null, {
       status: 400,
       headers: {
-        "Set-Cookie": deletedOauthCookie
-      }
+        "Set-Cookie": deletedOauthCookie,
+      },
     });
   }
 
-  console.log("Decoding idToken")
+  console.log("Decoding idToken");
   const claims = decodeIdToken(tokens.idToken()) as GoogleClaims;
 
-  console.log("Getting user")
-  const { user: existingUser } = await getUserOauthDb({ provider: params.provider, externalId: claims.sub });
-  const next = oauthCookieValues.next || "/"
+  console.log("Getting user");
+  const { user: existingUser } = await getUserOauthDb({
+    provider: params.provider,
+    externalId: claims.sub,
+  });
+  const next = oauthCookieValues.next || "/";
 
   if (existingUser !== null) {
-    console.log("User exists, redirecting...")
+    console.log("User exists, redirecting...");
     return redirect(next, {
       headers: [
         ["Set-Cookie", await setSessionCookieHeader(existingUser.id)],
-        ["Set-Cookie", deletedOauthCookie]
-      ]
-    })
+        ["Set-Cookie", deletedOauthCookie],
+      ],
+    });
   }
 
-  // TODO: Replace this with your own DB query.
-  // const user = await createUser(googleUserId, username);
-  console.log("User does not exists, creating...")
+  console.log("User does not exists, creating...: ", existingUser);
   const userId = await createOauthUserDb({
     externalId: claims.sub,
     email: claims.email,
     userInfo: claims,
-    provider: params.provider
-  })
+    provider: params.provider,
+  });
 
   return redirect(next, {
     headers: [
       ["Set-Cookie", await setSessionCookieHeader(userId)],
-      ["Set-Cookie", deletedOauthCookie]
-    ]
-  })
+      ["Set-Cookie", deletedOauthCookie],
+    ],
+  });
 }

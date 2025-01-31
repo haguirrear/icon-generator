@@ -1,8 +1,12 @@
 import { HouseIcon, LogInIcon, LogOutIcon } from "lucide-react";
 import { Link } from "@remix-run/react";
 import Show from "./utils/Show";
+import { Button } from "./ui/button";
+import { useUser } from "~/hooks/useUser";
+import { isServer } from "@tanstack/react-query";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
-export default function NavBar({ email, credits }: { email?: string, credits?: number }) {
+export function NavBar({ email, credits }: { email?: string, credits?: number }) {
   const cred = credits || 0
   return (
     <nav className="border-b border-border shadow-sm flex justify-between p-4">
@@ -37,4 +41,40 @@ export default function NavBar({ email, credits }: { email?: string, credits?: n
       </div>
     </nav >
   );
+}
+
+// Colors 
+// Background from bars: #1F2228 (accent)
+
+export default function NewNavBar(props: unknown) {
+  const { data, isLoading, isError } = useUser();
+
+  return (
+    <nav className="max-w-screen-xl  mx-auto my-4 rounded-xl bg-accent flex justify-between items-center">
+      <div className="p-2">
+        <img src="circle.svg" alt="circle logo" />
+      </div>
+
+      {isLoading || isError || !data?.loggedIn ? (
+        <Link to="/login" className="p-2">
+          <Button className="bg-secondary">Login</Button>
+        </Link>
+      ) : (
+        <div className="flex items-center gap-2 p-2">
+          <div className="flex gap-2 items-center justify-end w-full">
+            <form method="post" action="/signout" title="Sign out">
+              <Button className="bg-secondary" type="submit">Sign out</Button>
+            </form>
+          </div>
+
+          <Link to="/profile" className="font-semibold">
+            <Avatar>
+              <AvatarFallback>{data.email.substring(0, 2).toUpperCase()}</AvatarFallback>
+            </Avatar>
+          </Link>
+        </div>
+
+      )}
+    </nav>
+  )
 }
