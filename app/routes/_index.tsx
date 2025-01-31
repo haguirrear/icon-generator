@@ -6,6 +6,12 @@ export async function loader() {
   return null
 }
 
+export function headers() {
+  return {
+    "Cache-Control": "max-age=3600, s-maxage=3600, public"
+  }
+}
+
 
 export default function Index() {
   return <>
